@@ -1,5 +1,3 @@
-export const dynamic = 'force-dynamic';
-
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Bus } from '@/models/Bus';
@@ -10,7 +8,7 @@ export async function POST(req: Request) {
         await connectDB();
         const body = await req.json();
         console.log('API POST /api/bus:', body);
-        const { busId, busNumber, routeName, conductorName, mobileNo } = body;
+        const { busId, busNumber, routeName, conductorName, mobileNo, stops } = body;
 
         if (!busId || !busNumber || !routeName || !conductorName || !mobileNo) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
@@ -22,6 +20,7 @@ export async function POST(req: Request) {
             routeName,
             conductorName,
             mobileNo,
+            stops: stops || []
         });
 
         console.log('Bus created:', bus);
@@ -38,7 +37,7 @@ export async function POST(req: Request) {
 export async function GET() {
     try {
         await connectDB();
-        const buses = await Bus.find({}).sort({ createdAt: -1 });
+        const buses = await Bus.find({}).populate('stops').sort({ createdAt: -1 });
         return NextResponse.json({ success: true, buses });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -50,7 +49,7 @@ export async function PUT(req: Request) {
     try {
         await connectDB();
         const body = await req.json();
-        const { _id, busId, busNumber, routeName, conductorName, mobileNo } = body;
+        const { _id, busId, busNumber, routeName, conductorName, mobileNo, stops } = body;
 
         if (!_id) {
             return NextResponse.json({ error: 'Bus internal ID is required for update' }, { status: 400 });
@@ -58,9 +57,9 @@ export async function PUT(req: Request) {
 
         const updatedBus = await Bus.findByIdAndUpdate(
             _id,
-            { busId, busNumber, routeName, conductorName, mobileNo },
+            { busId, busNumber, routeName, conductorName, mobileNo, stops },
             { new: true }
-        );
+        ).populate('stops');
 
         if (!updatedBus) {
             return NextResponse.json({ error: 'Bus not found' }, { status: 404 });

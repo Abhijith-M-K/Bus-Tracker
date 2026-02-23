@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Navigation, Power, AlertCircle, MapPin, Loader2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Logo from '@/components/Logo';
 
 export default function TrackPage({ params }: { params: Promise<{ busId: string }> }) {
     const { busId } = use(params);
@@ -56,7 +57,6 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
             setError(null);
         } catch (err: any) {
             setError(err.message);
-            // If we fail to start, reset everything
             if (currentStatus === 'starting') {
                 setTracking(false);
                 setStatus('idle');
@@ -89,7 +89,6 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
                     (position) => {
                         const { latitude, longitude } = position.coords;
                         setLocation({ lat: latitude, lng: longitude });
-                        // We use the 'status' state indirectly but pass the local target status to avoid closure issues
                         updateLocationOnServer(latitude, longitude, status === 'idle' ? 'starting' : status);
                     },
                     (err) => {
@@ -113,7 +112,7 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
         return () => {
             if (watchId) navigator.geolocation.clearWatch(watchId);
         };
-    }, [tracking, busId]); // Reduced dependencies to prevent redundant effects
+    }, [tracking, busId]);
 
     if (loading) {
         return (
@@ -132,19 +131,18 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
             >
                 <div className="flex items-center justify-between glass p-4 px-6">
                     <div className="flex items-center gap-3">
-                        <div className="p-2 rounded-lg bg-accent/20">
-                            <ShieldCheck className="w-5 h-5 text-accent" />
-                        </div>
+                        <Logo iconSize={20} textSize="text-xl" />
+                        <div className="w-px h-8 bg-white/10 mx-1" />
                         <div>
-                            <h2 className="font-bold text-lg">Conductor Panel</h2>
-                            <p className="text-xs text-foreground/40 font-mono">
+                            <h2 className="font-bold text-sm">Conductor Panel</h2>
+                            <p className="text-[10px] text-foreground/40 font-mono">
                                 {bus ? `${bus.busNumber} (${bus.busId})` : busId}
                             </p>
                         </div>
                     </div>
                     <button
                         onClick={() => router.push('/conductor')}
-                        className="text-sm text-foreground/60 hover:text-foreground"
+                        className="text-xs text-foreground/60 hover:text-foreground font-semibold"
                     >
                         Logout
                     </button>

@@ -1,0 +1,19 @@
+{
+  "name": "Yathra - Conductor",
+  "short_name": "Yathra Conductor",
+  "description": "Conductor portal for broadcasting bus location.",
+  "start_url": "/conductor",
+  "display": "standalone",
+  "background_color": "#0a0a0b",
+  "theme_color": "#f59e0b",
+  "icons": [
+    {
+      "src": "/icon-conductor.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "scope": "/conductor"
+}

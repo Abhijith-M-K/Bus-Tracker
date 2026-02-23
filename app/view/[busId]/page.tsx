@@ -3,8 +3,9 @@
 import { useEffect, useState, use } from 'react';
 import { useRouter } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Bus, MapPin, RefreshCcw, ArrowLeft, Clock, Navigation2, Ruler } from 'lucide-react';
+import { Bus, MapPin, RefreshCcw, ArrowLeft, Clock, Navigation2, Ruler, CheckCircle2, Circle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import Logo from '@/components/Logo';
 
 // Dynamically import map to avoid SSR issues with Leaflet
 const Map = dynamic(() => import('@/components/Map'), {
@@ -15,21 +16,70 @@ const Map = dynamic(() => import('@/components/Map'), {
 // Haversine formula to calculate distance in km
 function calculateDistance(lat1: number, lon1: number, lat2: number, lon2: number) {
     const R = 6371; // Radius of the earth in km
-    const dLat = deg2rad(lat2 - lat1);
-    const dLon = deg2rad(lon2 - lon1);
+    const dLat = (lat2 - lat1) * Math.PI / 180;
+    const dLon = (lon2 - lon1) * Math.PI / 180;
     const a =
         Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-        Math.cos(deg2rad(lat1)) * Math.cos(deg2rad(lat2)) *
+        Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
         Math.sin(dLon / 2) * Math.sin(dLon / 2);
     const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
     return R * c; // Distance in km
 }
 
-function deg2rad(deg: number) {
-    return deg * (Math.PI / 180);
-}
+const RouteTimeline = ({ stops, busLocation }: { stops: any[], busLocation: { lat: number, lng: number } | null }) => {
+    if (!stops || stops.length === 0) return null;
 
-export default function ViewPage({ params }: { params: Promise<{ busId: string }> }) {
+    let closestIndex = -1;
+    if (busLocation) {
+        let minDistance = Infinity;
+        stops.forEach((stop, index) => {
+            const d = calculateDistance(busLocation.lat, busLocation.lng, stop.location.lat, stop.location.lng);
+            if (d < minDistance) {
+                minDistance = d;
+                closestIndex = index;
+            }
+        });
+    }
+
+    return (
+        <div className="glass p-6 space-y-6">
+            <h3 className="font-bold text-foreground/60 uppercase text-xs tracking-wider">Route Progress</h3>
+            <div className="relative space-y-8">
+                <div className="absolute left-[11px] top-2 bottom-2 w-0.5 bg-white/10" />
+                {stops.map((stop, index) => {
+                    const isPassed = closestIndex > index;
+                    const isCurrent = closestIndex === index;
+                    return (
+                        <div key={stop._id} className="relative flex items-start gap-4 pl-8">
+                            <div className="absolute left-0 top-1 z-10">
+                                {isPassed ? (
+                                    <CheckCircle2 className="w-6 h-6 text-green-500 bg-background rounded-full" />
+                                ) : isCurrent ? (
+                                    <div className="relative">
+                                        <div className="absolute inset-0 rounded-full bg-primary/20 animate-ping" />
+                                        <Navigation2 className="w-6 h-6 text-primary bg-background rounded-full rotate-45" />
+                                    </div>
+                                ) : (
+                                    <Circle className="w-6 h-6 text-foreground/20 bg-background rounded-full" />
+                                )}
+                            </div>
+                            <div className="flex flex-col">
+                                <span className={`text-sm font-bold ${isCurrent ? 'text-primary' : isPassed ? 'text-foreground/60' : 'text-foreground/40'}`}>
+                                    {stop.name}
+                                </span>
+                                {isCurrent && (
+                                    <span className="text-[10px] text-primary/60 font-medium uppercase tracking-tighter">Current Stop / Nearby</span>
+                                )}
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+        </div>
+    );
+};
+
+export default function ViewBus({ params }: { params: Promise<{ busId: string }> }) {
     const { busId } = use(params);
     const router = useRouter();
     const [location, setLocation] = useState<{ lat: number; lng: number } | null>(null);
@@ -38,39 +88,30 @@ export default function ViewPage({ params }: { params: Promise<{ busId: string }
     const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
-
-    // User location state
     const [userLocation, setUserLocation] = useState<{ lat: number; lng: number } | null>(null);
     const [distance, setDistance] = useState<number | null>(null);
-    const [eta, setEta] = useState<number | null>(null); // in minutes
+    const [eta, setEta] = useState<number | null>(null);
 
     const fetchLocation = async () => {
         try {
             const res = await fetch(`/api/journey/location/${busId}`);
             const data = await res.json();
-
             if (res.ok) {
                 setLocation(data.journey.currentLocation);
                 setAddress(data.address);
                 setBusDetails(data.busDetails);
                 setLastUpdated(new Date(data.journey.lastUpdated));
                 setError(null);
-
-                // Update distance if user location is available
                 if (userLocation && data.journey.currentLocation) {
-                    const d = calculateDistance(
-                        userLocation.lat, userLocation.lng,
-                        data.journey.currentLocation.lat, data.journey.currentLocation.lng
-                    );
+                    const d = calculateDistance(userLocation.lat, userLocation.lng, data.journey.currentLocation.lat, data.journey.currentLocation.lng);
                     setDistance(d);
-                    // Estimate time: distance / speed (e.g. 30km/h) * 60 minutes
                     setEta(Math.round((d / 30) * 60));
                 }
             } else {
-                setError(data.error || 'Could not find active bus location');
+                setError(data.error || 'No active signal found');
             }
         } catch (err) {
-            setError('Failed to connect to tracker');
+            setError('Connection lost');
         } finally {
             setLoading(false);
         }
@@ -79,168 +120,90 @@ export default function ViewPage({ params }: { params: Promise<{ busId: string }
     const enableUserLocation = () => {
         if ("geolocation" in navigator) {
             navigator.geolocation.getCurrentPosition((position) => {
-                setUserLocation({
-                    lat: position.coords.latitude,
-                    lng: position.coords.longitude
-                });
+                setUserLocation({ lat: position.coords.latitude, lng: position.coords.longitude });
             });
         }
     };
 
     useEffect(() => {
         fetchLocation();
-        const interval = setInterval(fetchLocation, 10000); // Update every 10 seconds
+        const interval = setInterval(fetchLocation, 10000);
         return () => clearInterval(interval);
     }, [busId, userLocation]);
 
     return (
         <main className="min-h-screen bg-background flex flex-col h-screen overflow-hidden">
-            {/* Header */}
-            <header className="p-4 md:p-6 flex items-center justify-between glass m-4 mb-0 z-20">
+            <header className="p-4 md:p-6 flex items-center justify-between glass m-4 mb-2 z-20">
                 <div className="flex items-center gap-4">
-                    <button
-                        onClick={() => router.push('/')}
-                        className="p-2 rounded-xl bg-white/5 hover:bg-white/10 transition-all"
-                    >
-                        <ArrowLeft className="w-5 h-5" />
+                    <button onClick={() => router.push('/')} className="p-2.5 rounded-xl bg-white/5 hover:bg-white/10 transition-all group">
+                        <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
                     </button>
                     <div>
-                        <h1 className="font-bold text-lg md:text-xl flex items-center gap-2">
-                            <Bus className="w-5 h-5 text-primary" />
+                        <Logo iconSize={20} textSize="text-xl" />
+                        <h1 className="font-bold text-lg md:text-xl flex items-center gap-2 mt-0.5">
                             {busDetails ? busDetails.busNumber : busId}
                         </h1>
-                        {busDetails && (
-                            <p className="text-xs text-foreground/60 font-medium">{busDetails.routeName}</p>
-                        )}
-                        <AnimatePresence mode="wait">
-                            {lastUpdated && (
-                                <motion.p
-                                    initial={{ opacity: 0 }}
-                                    animate={{ opacity: 1 }}
-                                    key={lastUpdated.getTime()}
-                                    className="text-xs text-foreground/40 flex items-center gap-1"
-                                >
-                                    <Clock className="w-3 h-3" />
-                                    Last updated: {lastUpdated.toLocaleTimeString()}
-                                </motion.p>
-                            )}
-                        </AnimatePresence>
                     </div>
                 </div>
                 <div className="flex gap-2">
-                    <button
-                        onClick={enableUserLocation}
-                        className={`p-3 rounded-xl transition-all ${userLocation ? 'bg-green-500/10 text-green-500' : 'bg-accent/10 text-accent hover:bg-accent/20'}`}
-                        title="Enable My Location"
-                    >
-                        <Navigation2 className={`w-5 h-5 ${userLocation ? '' : 'animate-pulse'}`} />
+                    <button onClick={enableUserLocation} className={`p-2.5 rounded-xl transition-all ${userLocation ? 'bg-green-500/10 text-green-400' : 'bg-white/5 text-foreground/50 hover:bg-white/10'}`}>
+                        <Navigation2 className="w-5 h-5" />
                     </button>
-                    <button
-                        onClick={() => { setLoading(true); fetchLocation(); }}
-                        className="p-3 rounded-xl bg-primary/10 text-primary hover:bg-primary/20 transition-all"
-                    >
+                    <button onClick={() => { setLoading(true); fetchLocation(); }} className="p-2.5 rounded-xl bg-primary/10 text-primary hover:bg-primary/20">
                         <RefreshCcw className={`w-5 h-5 ${loading ? 'animate-spin' : ''}`} />
                     </button>
                 </div>
             </header>
 
-            {/* Main Content Area */}
-            <div className="flex-1 relative m-4 flex flex-col md:flex-row gap-4 h-full overflow-hidden">
-                {/* Map Container */}
+            <div className="flex-1 relative m-4 mt-0 flex flex-col md:flex-row gap-4 h-full overflow-hidden">
                 <div className="flex-[2] glass overflow-hidden relative min-h-[40vh] md:min-h-0">
-                    {location ? (
-                        <Map center={[location.lat, location.lng]} />
-                    ) : error ? (
+                    {location ? <Map center={[location.lat, location.lng]} /> :
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-white/5">
-                            <div className="p-4 rounded-full bg-red-500/10 mb-4">
-                                <MapPin className="w-12 h-12 text-red-500/50" />
-                            </div>
-                            <h3 className="text-xl font-bold mb-2">Location Not Found</h3>
-                            <p className="text-foreground/50 max-w-xs">{error}</p>
-                        </div>
-                    ) : (
-                        <div className="absolute inset-0 flex items-center justify-center bg-white/5">
-                            <RefreshCcw className="w-10 h-10 text-primary animate-spin" />
-                        </div>
-                    )}
-
-                    {/* Distance Badge */}
+                            <MapPin className="w-12 h-12 text-foreground/10 mb-4" />
+                            <h3 className="text-xl font-bold mb-2">Signal Lost</h3>
+                            <p className="text-foreground/40 max-w-xs">{error || 'Waiting for bus location...'}</p>
+                        </div>}
                     {distance !== null && (
                         <div className="absolute top-4 right-4 z-[1000] glass px-4 py-2 flex items-center gap-2">
                             <Ruler className="w-4 h-4 text-primary" />
-                            <span className="font-bold text-sm">{distance.toFixed(2)} km away</span>
+                            <span className="font-bold text-sm tracking-tight">{distance.toFixed(1)} KM</span>
                         </div>
                     )}
                 </div>
 
-                {/* Info Sidebar */}
-                <div className="flex-1 flex flex-col gap-4 overflow-y-auto">
+                <div className="flex-1 flex flex-col gap-4 overflow-y-auto pb-4">
                     <div className="glass p-6 space-y-4">
-                        <h3 className="font-bold text-foreground/60 uppercase text-xs tracking-wider">Bus & Conductor</h3>
+                        <div className="flex justify-between items-start">
+                            <h3 className="font-bold text-foreground/60 uppercase text-[10px] tracking-widest">Bus Details</h3>
+                            {lastUpdated && <span className="text-[10px] text-foreground/30 font-mono">LIVE: {lastUpdated.toLocaleTimeString()}</span>}
+                        </div>
                         <div className="space-y-4">
-                            <div className="flex items-start gap-3">
-                                <div className="p-2 rounded-lg bg-primary/10">
-                                    <Bus className="w-5 h-5 text-primary" />
-                                </div>
+                            <div>
+                                <h4 className="text-lg font-bold text-primary">{busDetails?.routeName || 'Direct Route'}</h4>
+                                <p className="text-sm text-foreground/50">{busDetails?.conductorName} • {busDetails?.mobileNo}</p>
+                            </div>
+                            <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-3">
+                                <MapPin className="w-5 h-5 text-accent mt-0.5" />
                                 <div>
-                                    <p className="text-xs text-foreground/40 font-medium">Conductor Details</p>
-                                    <p className="font-medium text-sm md:text-base">
-                                        {busDetails ? `${busDetails.conductorName} (${busDetails.mobileNo})` : 'Conductor details unavailable'}
-                                    </p>
+                                    <p className="text-[10px] font-bold text-foreground/30 uppercase">Last Seen At</p>
+                                    <p className="text-sm font-medium leading-tight mt-0.5">{address || 'Kozhikode District, Kerala'}</p>
                                 </div>
                             </div>
-
-                            <div className="flex items-start gap-3">
-                                <div className="p-2 rounded-lg bg-accent/10">
-                                    <MapPin className="w-5 h-5 text-accent" />
-                                </div>
-                                <div>
-                                    <p className="text-xs text-foreground/40 font-medium">Current Location</p>
-                                    <p className="font-medium text-sm md:text-base leading-tight">
-                                        {address || (location ? `${location.lat.toFixed(4)}° N, ${location.lng.toFixed(4)}° E` : 'Searching...')}
-                                    </p>
-                                </div>
-                            </div>
-
-                            {distance !== null && (
-                                <div className="p-4 rounded-xl bg-primary/5 border border-primary/10 space-y-3">
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs text-foreground/50">Distance</span>
-                                        <span className="font-bold text-lg text-primary">{distance.toFixed(1)} KM</span>
+                            {distance !== null && eta !== null && (
+                                <div className="grid grid-cols-2 gap-3">
+                                    <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-center">
+                                        <p className="text-[10px] font-bold text-primary/60 uppercase mb-1">Distance</p>
+                                        <p className="text-xl font-black">{distance.toFixed(1)} <span className="text-sm">KM</span></p>
                                     </div>
-                                    <div className="flex justify-between items-center">
-                                        <span className="text-xs text-foreground/50">Estimated Arrival</span>
-                                        <span className="font-bold text-lg text-accent">{eta} MINS</span>
+                                    <div className="p-4 rounded-2xl bg-accent/10 border border-accent/20 text-center">
+                                        <p className="text-[10px] font-bold text-accent/60 uppercase mb-1">Arrival</p>
+                                        <p className="text-xl font-black">{eta} <span className="text-sm">MIN</span></p>
                                     </div>
                                 </div>
                             )}
-
-                            <div className="p-4 rounded-xl bg-white/5 border border-white/5">
-                                <p className="text-xs text-foreground/40 mb-2">Tracking Status</p>
-                                <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full ${location ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
-                                    <span className="text-sm font-semibold">{location ? 'Live Signal' : 'Offline'}</span>
-                                </div>
-                            </div>
                         </div>
                     </div>
-
-                    {!userLocation && (
-                        <button
-                            onClick={enableUserLocation}
-                            className="glass p-4 text-center text-sm font-bold text-accent hover:bg-accent/10 transition-all flex items-center justify-center gap-2"
-                        >
-                            <Navigation2 className="w-4 h-4" />
-                            Enable My Location for Distance & ETA
-                        </button>
-                    )}
-
-                    <div className="glass p-6 hidden md:block">
-                        <h3 className="font-bold text-foreground/60 uppercase text-xs tracking-wider mb-4">About this Data</h3>
-                        <p className="text-xs text-foreground/40 leading-relaxed">
-                            Address is detected using reverse geocoding. Distance is calculated as-the-crow-flies between you and the bus. ETA is an estimate based on average bus speed.
-                        </p>
-                    </div>
+                    {busDetails?.stops && busDetails.stops.length > 0 && <RouteTimeline stops={busDetails.stops} busLocation={location} />}
                 </div>
             </div>
         </main>

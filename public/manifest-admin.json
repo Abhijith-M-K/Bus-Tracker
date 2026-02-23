@@ -1,0 +1,19 @@
+{
+  "name": "Yathra - Admin",
+  "short_name": "Yathra Admin",
+  "description": "Admin dashboard for bus and route management.",
+  "start_url": "/admin",
+  "display": "standalone",
+  "background_color": "#0a0a0b",
+  "theme_color": "#ef4444",
+  "icons": [
+    {
+      "src": "/icon-admin.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "scope": "/admin"
+}

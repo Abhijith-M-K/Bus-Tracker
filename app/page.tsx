@@ -2,8 +2,9 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Bus, MapPin, Activity, Search } from 'lucide-react';
+import { MapPin, Search } from 'lucide-react';
 import { motion } from 'framer-motion';
+import Logo from '@/components/Logo';
 
 export default function Home() {
   const [busId, setBusId] = useState('');
@@ -14,10 +15,6 @@ export default function Home() {
     if (busId) router.push(`/view/${busId}`);
   };
 
-  const handleStartJourney = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (busId) router.push(`/track/${busId}`);
-  };
 
   return (
     <main className="flex min-h-screen flex-col items-center justify-center p-6 bg-background">
@@ -26,13 +23,8 @@ export default function Home() {
         animate={{ opacity: 1, y: 0 }}
         className="w-full max-w-md glass p-8 space-y-8"
       >
-        <div className="text-center space-y-2">
-          <div className="inline-flex p-3 rounded-2xl bg-primary/10 mb-2">
-            <Bus className="w-8 h-8 text-primary" />
-          </div>
-          <h1 className="text-4xl font-bold tracking-tight text-gradient">
-            BusTracker
-          </h1>
+        <div className="flex flex-col items-center text-center space-y-2">
+          <Logo iconSize={32} textSize="text-4xl" className="mb-2" />
           <p className="text-foreground/60">
             Real-time bus location finder
           </p>

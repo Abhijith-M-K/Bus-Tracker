@@ -33,7 +33,7 @@ export async function GET(
                 { busId: { $regex: new RegExp(`^${searchTerm}$`, 'i') } },
                 { mobileNo: searchTerm }
             ]
-        });
+        }).populate('stops');
 
         const queryBusId = bus ? bus.busId : searchTerm;
 

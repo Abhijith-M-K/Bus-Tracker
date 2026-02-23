@@ -6,6 +6,7 @@ export interface IBus extends Document {
     routeName: string;
     conductorName: string;
     mobileNo: string;
+    stops: mongoose.Types.ObjectId[];
 }
 
 const BusSchema = new Schema<IBus>({
@@ -14,6 +15,7 @@ const BusSchema = new Schema<IBus>({
     routeName: { type: String, required: true },
     conductorName: { type: String, required: true },
     mobileNo: { type: String, required: true },
+    stops: [{ type: Schema.Types.ObjectId, ref: 'Depo' }],
 }, { timestamps: true });
 
 export interface IJourney extends Document {

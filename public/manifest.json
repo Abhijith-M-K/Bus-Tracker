@@ -1,0 +1,19 @@
+{
+  "name": "Yathra - Passenger",
+  "short_name": "Yathra",
+  "description": "Real-time bus location finder for passengers.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#0a0a0b",
+  "theme_color": "#3b82f6",
+  "icons": [
+    {
+      "src": "/icon-passenger.png",
+      "sizes": "1024x1024",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "orientation": "portrait",
+  "scope": "/"
+}

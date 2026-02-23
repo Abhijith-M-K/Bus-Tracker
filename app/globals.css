@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Betania+Patmos&display=swap');
 @import "tailwindcss";
 
 :root {
@@ -8,6 +9,7 @@
   --accent: #8b5cf6;
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
+  --font-logo: 'Betania Patmos', cursive;
 }
 
 body {
@@ -27,6 +29,7 @@ body {
 .text-gradient {
   background: linear-gradient(to right, var(--primary), var(--secondary), var(--accent));
   -webkit-background-clip: text;
+  background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
@@ -34,13 +37,16 @@ body {
 ::-webkit-scrollbar {
   width: 8px;
 }
+
 ::-webkit-scrollbar-track {
   background: #0a0a0b;
 }
+
 ::-webkit-scrollbar-thumb {
   background: #333;
   border-radius: 4px;
 }
+
 ::-webkit-scrollbar-thumb:hover {
   background: #444;
 }
