@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Journey, Bus } from '@/models/Bus';
+import { Depo } from '@/models/Depo'; // Ensure Depo is registered
 
 async function getAddress(lat: number, lng: number) {
     try {

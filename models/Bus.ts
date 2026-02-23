@@ -1,4 +1,5 @@
 import mongoose, { Schema, Document, model, models } from 'mongoose';
+import './Depo';
 
 export interface IBus extends Document {
     busId: string;

@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Bus } from '@/models/Bus';
+import { Depo } from '@/models/Depo'; // Ensure Depo is registered
 
 // Create a new bus
 export async function POST(req: Request) {
