@@ -109,6 +109,9 @@ export default function ViewBus({ params }: { params: Promise<{ busId: string }>
                 }
             } else {
                 setError(data.error || 'No active signal found');
+                setLocation(null);
+                setDistance(null);
+                setEta(null);
             }
         } catch (err) {
             setError('Connection lost');
@@ -157,7 +160,7 @@ export default function ViewBus({ params }: { params: Promise<{ busId: string }>
 
             <div className="flex-1 relative m-4 mt-0 flex flex-col md:flex-row gap-4 h-full overflow-hidden">
                 <div className="flex-[2] glass overflow-hidden relative min-h-[40vh] md:min-h-0">
-                    {location ? <Map center={[location.lat, location.lng]} /> :
+                    {location ? <Map center={[location.lat, location.lng]} stops={busDetails?.stops} /> :
                         <div className="absolute inset-0 flex flex-col items-center justify-center p-8 text-center bg-white/5">
                             <MapPin className="w-12 h-12 text-foreground/10 mb-4" />
                             <h3 className="text-xl font-bold mb-2">Signal Lost</h3>

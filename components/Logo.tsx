@@ -11,19 +11,22 @@ interface LogoProps {
 
 export default function Logo({ className = "", iconSize = 24, textSize = "text-2xl" }: LogoProps) {
     return (
-        <div className={`flex items-center gap-3 ${className}`}>
-            <motion.div
-                whileHover={{ scale: 1.05 }}
-                className="p-2.5 rounded-2xl bg-primary shadow-lg shadow-primary/30 flex items-center justify-center"
-            >
-                <Bus size={iconSize} className="text-white" strokeWidth={2.5} />
-            </motion.div>
+        <motion.div
+            whileHover={{ scale: 1.05 }}
+            className={`flex items-center gap-2 ${className}`}
+        >
+            <Bus
+                size={iconSize}
+                className="text-blue-500"
+                fill="none"
+                strokeWidth={2.5}
+            />
             <span
-                className={`${textSize} tracking-tight text-gradient italic`}
+                className={`${textSize} font-bold text-zinc-100`}
                 style={{ fontFamily: 'var(--font-logo)' }}
             >
                 Yathra
             </span>
-        </div>
+        </motion.div>
     );
 }

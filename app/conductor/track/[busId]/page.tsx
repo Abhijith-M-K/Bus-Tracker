@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback, use } from 'react';
 import { useRouter } from 'next/navigation';
-import { ShieldCheck, Navigation, Power, AlertCircle, MapPin, Loader2 } from 'lucide-react';
+import { ShieldCheck, Navigation, Power, AlertCircle, MapPin, Loader2, RefreshCcw, ArrowLeftRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import Logo from '@/components/Logo';
 
@@ -16,6 +16,7 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
     const [status, setStatus] = useState<'idle' | 'starting' | 'active' | 'error'>('idle');
     const [loading, setLoading] = useState(true);
     const [requestLock, setRequestLock] = useState(false);
+    const [direction, setDirection] = useState<'forward' | 'return'>('forward');
 
     const checkBus = useCallback(async () => {
         try {
@@ -47,7 +48,7 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ busId, lat, lng }),
+                body: JSON.stringify({ busId, lat, lng, direction }),
             });
 
             const data = await res.json();
@@ -195,6 +196,26 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
                             </motion.div>
                         )}
                     </AnimatePresence>
+
+                    {/* Direction Toggle */}
+                    <div className="flex p-1 bg-white/5 rounded-xl border border-white/10 relative">
+                        <button
+                            type="button"
+                            onClick={() => setDirection('forward')}
+                            disabled={tracking}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all relative z-10 cursor-pointer ${direction === 'forward' ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 scale-[1.02]' : 'text-foreground/40 hover:text-white hover:bg-white/5'} ${tracking ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            Forward Trip
+                        </button>
+                        <button
+                            type="button"
+                            onClick={() => setDirection('return')}
+                            disabled={tracking}
+                            className={`flex-1 flex items-center justify-center gap-2 py-3 rounded-lg text-sm font-bold transition-all relative z-10 cursor-pointer ${direction === 'return' ? 'bg-blue-600 text-white shadow-xl shadow-blue-600/30 scale-[1.02]' : 'text-foreground/40 hover:text-white hover:bg-white/5'} ${tracking ? 'opacity-50 cursor-not-allowed' : ''}`}
+                        >
+                            Return Trip
+                        </button>
+                    </div>
 
                     <button
                         onClick={() => {

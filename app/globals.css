@@ -1,3 +1,4 @@
+@import url('https://fonts.googleapis.com/css2?family=Bpmf+Huninn&display=swap');
 @import url('https://fonts.googleapis.com/css2?family=Betania+Patmos&display=swap');
 @import "tailwindcss";
 
@@ -9,7 +10,7 @@
   --accent: #8b5cf6;
   --glass-bg: rgba(255, 255, 255, 0.05);
   --glass-border: rgba(255, 255, 255, 0.1);
-  --font-logo: 'Betania Patmos', cursive;
+  --font-logo: 'Bpmf Huninn', 'Betania Patmos', cursive;
 }
 
 body {
@@ -17,6 +18,20 @@ body {
   background: radial-gradient(circle at top left, #1a1a1f, #0a0a0b 50%);
   min-height: 100vh;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
+}
+
+button,
+a,
+input[type="button"],
+input[type="submit"],
+[role="button"] {
+  cursor: pointer;
+}
+
+button:disabled,
+input:disabled,
+a.disabled {
+  cursor: not-allowed;
 }
 
 .glass {
@@ -57,4 +72,22 @@ body {
   height: 100%;
   border-radius: 1rem;
   z-index: 10;
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+}
+
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.2);
 }

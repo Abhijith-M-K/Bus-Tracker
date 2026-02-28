@@ -7,7 +7,7 @@ import { Journey, Bus } from '@/models/Bus';
 export async function POST(req: Request) {
     try {
         await connectDB();
-        const { busId: searchTermRaw, lat, lng } = await req.json();
+        const { busId: searchTermRaw, lat, lng, direction } = await req.json();
         const searchTerm = searchTermRaw?.trim();
 
         if (!searchTerm || lat === undefined || lng === undefined) {
@@ -24,15 +24,15 @@ export async function POST(req: Request) {
 
         const canonicalBusId = bus ? bus.busId : searchTerm;
 
-        // Mark any existing active journeys for this bus as completed
-        await Journey.updateMany(
-            { busId: { $regex: new RegExp(`^${canonicalBusId}$`, 'i') }, status: 'active' },
-            { $set: { status: 'completed', endTime: new Date() } }
+        // Mark any existing active journeys for this bus as completed (we delete them to keep DB clean)
+        await Journey.deleteMany(
+            { busId: { $regex: new RegExp(`^${canonicalBusId}$`, 'i') }, status: 'active' }
         );
 
         const journey = await Journey.create({
             busId: canonicalBusId,
             currentLocation: { lat, lng },
+            direction: direction || 'forward',
             status: 'active',
             startTime: new Date(),
         });

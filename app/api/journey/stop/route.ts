@@ -14,12 +14,11 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: 'Missing Bus ID' }, { status: 400 });
         }
 
-        const result = await Journey.updateMany(
-            { busId: { $regex: new RegExp(`^${searchTerm}$`, 'i') }, status: 'active' },
-            { $set: { status: 'completed', endTime: new Date() } }
+        const result = await Journey.deleteMany(
+            { busId: { $regex: new RegExp(`^${searchTerm}$`, 'i') }, status: 'active' }
         );
 
-        return NextResponse.json({ success: true, message: 'Journey stopped', modifiedCount: result.modifiedCount });
+        return NextResponse.json({ success: true, message: 'Journey stopped', deletedCount: result.deletedCount });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

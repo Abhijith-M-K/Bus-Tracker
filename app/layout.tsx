@@ -12,6 +12,7 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+
 export const metadata: Metadata = {
   title: "Yathra - Live Bus Tracking",
   description: "Real-time bus location finder and journey tracker.",

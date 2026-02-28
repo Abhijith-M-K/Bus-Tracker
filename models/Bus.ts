@@ -22,6 +22,7 @@ const BusSchema = new Schema<IBus>({
 export interface IJourney extends Document {
     busId: string;
     status: 'active' | 'completed';
+    direction: 'forward' | 'return';
     currentLocation: {
         lat: number;
         lng: number;
@@ -34,6 +35,7 @@ export interface IJourney extends Document {
 const JourneySchema = new Schema<IJourney>({
     busId: { type: String, required: true },
     status: { type: String, enum: ['active', 'completed'], default: 'active' },
+    direction: { type: String, enum: ['forward', 'return'], default: 'forward' },
     currentLocation: {
         lat: { type: Number, required: true },
         lng: { type: Number, required: true },

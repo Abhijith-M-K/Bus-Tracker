@@ -265,35 +265,38 @@ export default function AdminDashboard() {
     }
 
     return (
-        <main className="min-h-screen bg-background p-4 md:p-8">
-            <div className="max-w-6xl mx-auto space-y-6">
-                <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass p-6">
-                    <div className="space-y-1">
-                        <Logo />
-                        <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
-                        <p className="text-foreground/60">System monitoring & resource management</p>
-                    </div>
-                    <div className="flex gap-4">
-                        <button onClick={handleLogout} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-red-400 flex items-center gap-2">
-                            <LogOut className="w-5 h-5" /> <span className="hidden md:block">Logout</span>
-                        </button>
-                        <div className="p-3 bg-primary/10 rounded-xl text-primary"><Users className="w-8 h-8" /></div>
-                    </div>
-                </header>
+        <main className="h-screen bg-background flex flex-col overflow-hidden">
+            <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col overflow-hidden p-4 md:p-8 gap-6">
+                {/* STICKY HEADER & TABS CONTAINER */}
+                <div className="flex-shrink-0 bg-background/80 backdrop-blur-xl -mx-4 px-4 py-4 space-y-4 border-b border-white/5">
+                    <header className="flex flex-col md:flex-row md:items-center justify-between gap-4 glass p-6">
+                        <div className="space-y-1">
+                            <Logo />
+                            <h2 className="text-3xl font-bold tracking-tight">Admin Dashboard</h2>
+                            <p className="text-foreground/60">System monitoring & resource management</p>
+                        </div>
+                        <div className="flex gap-4">
+                            <button onClick={handleLogout} className="p-3 bg-white/5 hover:bg-white/10 rounded-xl text-red-400 flex items-center gap-2">
+                                <LogOut className="w-5 h-5" /> <span className="hidden md:block">Logout</span>
+                            </button>
+                            <div className="p-3 bg-primary/10 rounded-xl text-primary"><Users className="w-8 h-8" /></div>
+                        </div>
+                    </header>
 
-                {/* TABS */}
-                <div className="flex gap-2 bg-white/5 p-1 rounded-xl w-fit">
-                    <button onClick={() => { setActiveTab('buses'); setEditingId(null); setMessage(''); }} className={`px-6 py-2.5 rounded-lg font-bold transition-all ${activeTab === 'buses' ? 'bg-primary text-white shadow-lg' : 'hover:bg-white/5 text-foreground/50'}`}>Buses</button>
-                    <button onClick={() => { setActiveTab('depos'); setEditingId(null); setMessage(''); }} className={`px-6 py-2.5 rounded-lg font-bold transition-all ${activeTab === 'depos' ? 'bg-primary text-white shadow-lg' : 'hover:bg-white/5 text-foreground/50'}`}>Depos</button>
+                    {/* TABS */}
+                    <div className="flex gap-2 bg-white/5 p-1 rounded-xl w-fit">
+                        <button onClick={() => { setActiveTab('buses'); setEditingId(null); setMessage(''); }} className={`px-6 py-2.5 rounded-lg font-bold transition-all ${activeTab === 'buses' ? 'bg-primary text-white shadow-lg' : 'hover:bg-white/5 text-foreground/50'}`}>Buses</button>
+                        <button onClick={() => { setActiveTab('depos'); setEditingId(null); setMessage(''); }} className={`px-6 py-2.5 rounded-lg font-bold transition-all ${activeTab === 'depos' ? 'bg-primary text-white shadow-lg' : 'hover:bg-white/5 text-foreground/50'}`}>Depos</button>
+                    </div>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                <div className="flex-1 min-h-0 grid grid-cols-1 lg:grid-cols-3 gap-8">
                     {/* LEFT PANEL - FORMS */}
-                    <div className="lg:col-span-1">
-                        <div className="glass p-6 space-y-6 sticky top-8">
+                    <div className="lg:col-span-1 h-full overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="glass p-6 space-y-6">
                             {activeTab === 'buses' ? (
                                 <>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-2 -mt-2 mb-4">
                                         <h2 className="text-xl font-bold flex items-center gap-2">{editingId ? <Edit2 className="w-5 h-5 text-accent" /> : <Plus className="w-5 h-5 text-accent" />} {editingId ? 'Edit Bus' : 'Add New Bus'}</h2>
                                         {editingId && <button onClick={() => { setEditingId(null); setBusForm({ busId: '', busNumber: '', routeName: '', conductorName: '', mobileNo: '', stops: [] }); }} className="p-1 hover:bg-white/10 rounded-lg text-foreground/50"><X className="w-5 h-5" /></button>}
                                     </div>
@@ -361,7 +364,7 @@ export default function AdminDashboard() {
                                 </>
                             ) : (
                                 <>
-                                    <div className="flex justify-between items-center">
+                                    <div className="flex justify-between items-center sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-2 -mt-2 mb-4">
                                         <h2 className="text-xl font-bold flex items-center gap-2">{editingId ? <Edit2 className="w-5 h-5 text-accent" /> : <Plus className="w-5 h-5 text-accent" />} {editingId ? 'Edit Depo' : 'Add New Depo'}</h2>
                                         {editingId && <button onClick={() => { setEditingId(null); setDepoForm({ name: '', lat: 10.8505, lng: 76.2711 }); }} className="p-1 hover:bg-white/10 rounded-lg text-foreground/50"><X className="w-5 h-5" /></button>}
                                     </div>
@@ -393,8 +396,8 @@ export default function AdminDashboard() {
                     </div>
 
                     {/* RIGHT PANEL - LISTS */}
-                    <div className="lg:col-span-2 space-y-4">
-                        <div className="flex items-center justify-between">
+                    <div className="lg:col-span-2 h-full overflow-y-auto pr-2 custom-scrollbar space-y-4">
+                        <div className="flex items-center justify-between sticky top-0 z-10 bg-background/95 backdrop-blur-sm py-2 -mt-2 mb-2">
                             <h2 className="text-xl font-bold">{activeTab === 'buses' ? 'Registered Fleet' : 'Manage Depos'}</h2>
                             <button onClick={refreshData} className="text-xs text-primary hover:underline">Refresh</button>
                         </div>

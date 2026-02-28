@@ -52,10 +52,23 @@ export async function GET(
 
         const address = await getAddress(journey.currentLocation.lat, journey.currentLocation.lng);
 
+        // Handle Directional Route Reversal
+        let processedBus = bus ? JSON.parse(JSON.stringify(bus)) : null;
+        if (processedBus && journey.direction === 'return') {
+            // Reverse Stops
+            if (processedBus.stops && Array.isArray(processedBus.stops)) {
+                processedBus.stops.reverse();
+            }
+            // Reverse Route Name (Source - Destination -> Destination - Source)
+            if (processedBus.routeName && processedBus.routeName.includes(' - ')) {
+                processedBus.routeName = processedBus.routeName.split(' - ').reverse().join(' - ');
+            }
+        }
+
         return NextResponse.json({
             success: true,
             journey,
-            busDetails: bus || null,
+            busDetails: processedBus,
             address
         });
     } catch (error: any) {
