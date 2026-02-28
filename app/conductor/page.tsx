@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
     ShieldCheck, Bus, Loader2, LogIn, AlertCircle,
-    UserPlus, Mail, Lock, Phone, Building2, User
+    UserPlus, Mail, Lock, Phone, Building2, User, ChevronDown
 } from 'lucide-react';
 import Logo from '@/components/Logo';
 
@@ -17,6 +17,7 @@ export default function ConductorAuth() {
     const [isError, setIsError] = useState(false);
     const [isLoggedIn, setIsLoggedIn] = useState(false);
     const [conductorName, setConductorName] = useState('');
+    const [depos, setDepos] = useState<any[]>([]);
 
     // Form states
     const [formData, setFormData] = useState({
@@ -25,10 +26,22 @@ export default function ConductorAuth() {
         email: '',
         phone: '',
         password: '',
-        busId: ''
+        busId: '',
+        conductorId: ''
     });
 
     useEffect(() => {
+        const fetchDepos = async () => {
+            try {
+                const res = await fetch('/api/depo');
+                const data = await res.json();
+                if (data.success) setDepos(data.depos);
+            } catch (err) {
+                console.error('Failed to fetch depos:', err);
+            }
+        };
+        fetchDepos();
+
         const savedAuth = localStorage.getItem('conductor_authenticated');
         if (savedAuth === 'true') {
             setIsLoggedIn(true);
@@ -157,6 +170,13 @@ export default function ConductorAuth() {
                                     {authMode === 'register' && (
                                         <>
                                             <div className="space-y-1">
+                                                <label className="text-xs font-semibold text-foreground/40 uppercase ml-1">Conductor ID</label>
+                                                <div className="relative">
+                                                    <ShieldCheck className="absolute left-3.5 top-3.5 w-5 h-5 text-foreground/30" />
+                                                    <input required value={formData.conductorId} onChange={e => setFormData({ ...formData, conductorId: e.target.value })} className={inputClasses} placeholder="C-1234" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-1">
                                                 <label className="text-xs font-semibold text-foreground/40 uppercase ml-1">Full Name</label>
                                                 <div className="relative">
                                                     <User className="absolute left-3.5 top-3.5 w-5 h-5 text-foreground/30" />
@@ -167,7 +187,18 @@ export default function ConductorAuth() {
                                                 <label className="text-xs font-semibold text-foreground/40 uppercase ml-1">Depo</label>
                                                 <div className="relative">
                                                     <Building2 className="absolute left-3.5 top-3.5 w-5 h-5 text-foreground/30" />
-                                                    <input required value={formData.depo} onChange={e => setFormData({ ...formData, depo: e.target.value })} className={inputClasses} placeholder="Kozhikode" />
+                                                    <select
+                                                        required
+                                                        value={formData.depo}
+                                                        onChange={e => setFormData({ ...formData, depo: e.target.value })}
+                                                        className={`${inputClasses} appearance-none`}
+                                                    >
+                                                        <option value="" disabled className="bg-background">Select Depo</option>
+                                                        {depos.map(d => (
+                                                            <option key={d._id} value={d.name} className="bg-background">{d.name}</option>
+                                                        ))}
+                                                    </select>
+                                                    <ChevronDown className="absolute right-3.5 top-3.5 w-5 h-5 text-foreground/30 pointer-events-none" />
                                                 </div>
                                             </div>
                                             <div className="space-y-1">
@@ -206,7 +237,7 @@ export default function ConductorAuth() {
 
                                 <button
                                     disabled={loading}
-                                    className="w-full bg-accent hover:bg-accent/90 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-accent/20 flex items-center justify-center gap-2 mt-4"
+                                    className="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-xl transition-all shadow-lg shadow-primary/20 flex items-center justify-center gap-2 mt-4"
                                 >
                                     {loading ? <Loader2 className="w-5 h-5 animate-spin" /> : <span>{authMode === 'login' ? 'Login' : 'Register Account'}</span>}
                                 </button>

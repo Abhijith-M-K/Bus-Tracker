@@ -17,6 +17,11 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
     const [loading, setLoading] = useState(true);
     const [requestLock, setRequestLock] = useState(false);
     const [direction, setDirection] = useState<'forward' | 'return'>('forward');
+    const [storedName, setStoredName] = useState<string>('');
+
+    useEffect(() => {
+        setStoredName(localStorage.getItem('conductor_name') || '');
+    }, []);
 
     const checkBus = useCallback(async () => {
         try {
@@ -166,7 +171,7 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
                             {status === 'active' ? 'Broadcasting Location' : status === 'starting' ? 'Initializing...' : 'Ready to Start'}
                         </h1>
                         <p className="text-foreground/50 text-sm max-w-xs mx-auto">
-                            {bus ? `Hi ${bus.conductorName}, start your shift to broadcast location.` : 'Start your shift to broadcast location.'}
+                            {`Hi ${bus?.conductorName || storedName || 'Staff'}, start your shift to broadcast location.`}
                         </p>
                     </div>
 
@@ -238,7 +243,7 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
                         <div>
                             <h3 className="font-bold text-sm">{bus.routeName}</h3>
                             <p className="text-xs text-foreground/60 leading-relaxed">
-                                {bus.busNumber} • {bus.conductorName} • {bus.mobileNo}
+                                {bus.busNumber} • {bus.conductorName || storedName || 'Staff Not Assigned'} • {bus.mobileNo || 'N/A'}
                             </p>
                         </div>
                     </div>

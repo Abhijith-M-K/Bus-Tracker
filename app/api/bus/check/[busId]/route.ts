@@ -24,7 +24,37 @@ export async function GET(
             return NextResponse.json({ error: 'Bus not registered' }, { status: 404 });
         }
 
-        return NextResponse.json({ success: true, bus });
+        // NEW: Fetch today's allocation for this bus to populate conductor details
+        let processedBus = JSON.parse(JSON.stringify(bus));
+        try {
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+
+            // Use a wider range to account for potential UTC/Local timezone shifts (±12h)
+            const searchStart = new Date(today.getTime() - 12 * 60 * 60 * 1000);
+            const searchEnd = new Date(today.getTime() + 36 * 60 * 60 * 1000);
+
+            const { Allocation } = await import('@/models/Allocation');
+            const { Conductor } = await import('@/models/Conductor');
+
+            const allocation = await Allocation.findOne({
+                busId: bus._id,
+                date: {
+                    $gte: searchStart,
+                    $lt: searchEnd
+                }
+            }).populate('conductorId');
+
+            if (allocation && allocation.conductorId) {
+                processedBus.conductorName = allocation.conductorId.name;
+                processedBus.mobileNo = allocation.conductorId.phone;
+                processedBus.conductorIdString = allocation.conductorId.conductorId;
+            }
+        } catch (allocError) {
+            console.error('Error fetching allocation for conductor view:', allocError);
+        }
+
+        return NextResponse.json({ success: true, bus: processedBus });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
     }

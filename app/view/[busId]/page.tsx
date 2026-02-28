@@ -183,10 +183,14 @@ export default function ViewBus({ params }: { params: Promise<{ busId: string }>
                         <div className="space-y-4">
                             <div>
                                 <h4 className="text-lg font-bold text-primary">{busDetails?.routeName || 'Direct Route'}</h4>
-                                <p className="text-sm text-foreground/50">{busDetails?.conductorName} • {busDetails?.mobileNo}</p>
+                                <p className="text-sm text-foreground/50">
+                                    {busDetails?.conductorName || 'Staff Not Assigned'}
+                                    {busDetails?.conductorId && ` (ID: ${busDetails.conductorId})`}
+                                    {busDetails?.mobileNo && ` • ${busDetails.mobileNo}`}
+                                </p>
                             </div>
                             <div className="p-4 rounded-2xl bg-white/5 border border-white/5 flex items-start gap-3">
-                                <MapPin className="w-5 h-5 text-accent mt-0.5" />
+                                <MapPin className="w-5 h-5 text-primary mt-0.5" />
                                 <div>
                                     <p className="text-[10px] font-bold text-foreground/30 uppercase">Last Seen At</p>
                                     <p className="text-sm font-medium leading-tight mt-0.5">{address || 'Kozhikode District, Kerala'}</p>
@@ -198,8 +202,8 @@ export default function ViewBus({ params }: { params: Promise<{ busId: string }>
                                         <p className="text-[10px] font-bold text-primary/60 uppercase mb-1">Distance</p>
                                         <p className="text-xl font-black">{distance.toFixed(1)} <span className="text-sm">KM</span></p>
                                     </div>
-                                    <div className="p-4 rounded-2xl bg-accent/10 border border-accent/20 text-center">
-                                        <p className="text-[10px] font-bold text-accent/60 uppercase mb-1">Arrival</p>
+                                    <div className="p-4 rounded-2xl bg-primary/10 border border-primary/20 text-center">
+                                        <p className="text-[10px] font-bold text-primary/60 uppercase mb-1">Arrival</p>
                                         <p className="text-xl font-black">{eta} <span className="text-sm">MIN</span></p>
                                     </div>
                                 </div>

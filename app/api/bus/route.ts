@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import connectDB from '@/lib/mongodb';
 import { Bus } from '@/models/Bus';
+import { Route } from '@/models/Route';
 import { Depo } from '@/models/Depo'; // Ensure Depo is registered
 
 // Create a new bus
@@ -9,9 +10,9 @@ export async function POST(req: Request) {
         await connectDB();
         const body = await req.json();
         console.log('API POST /api/bus:', body);
-        const { busId, busNumber, routeName, conductorName, mobileNo, stops } = body;
+        const { busId, busNumber, routeName, depo, route } = body;
 
-        if (!busId || !busNumber || !routeName || !conductorName || !mobileNo) {
+        if (!busId || !busNumber || !routeName || !depo || !route) {
             return NextResponse.json({ error: 'All fields are required' }, { status: 400 });
         }
 
@@ -19,9 +20,8 @@ export async function POST(req: Request) {
             busId,
             busNumber,
             routeName,
-            conductorName,
-            mobileNo,
-            stops: stops || []
+            depo,
+            route
         });
 
         console.log('Bus created:', bus);
@@ -34,11 +34,17 @@ export async function POST(req: Request) {
     }
 }
 
-// Get all buses
-export async function GET() {
+// Get all buses (with optional depo filtering)
+export async function GET(req: Request) {
     try {
         await connectDB();
-        const buses = await Bus.find({}).populate('stops').sort({ createdAt: -1 });
+        const { searchParams } = new URL(req.url);
+        const depo = searchParams.get('depo');
+
+        const query = depo ? { depo } : {};
+        const buses = await Bus.find(query)
+            .populate('route')
+            .sort({ createdAt: -1 });
         return NextResponse.json({ success: true, buses });
     } catch (error: any) {
         return NextResponse.json({ error: error.message }, { status: 500 });
@@ -50,7 +56,7 @@ export async function PUT(req: Request) {
     try {
         await connectDB();
         const body = await req.json();
-        const { _id, busId, busNumber, routeName, conductorName, mobileNo, stops } = body;
+        const { _id, busId, busNumber, routeName, depo, route } = body;
 
         if (!_id) {
             return NextResponse.json({ error: 'Bus internal ID is required for update' }, { status: 400 });
@@ -58,9 +64,9 @@ export async function PUT(req: Request) {
 
         const updatedBus = await Bus.findByIdAndUpdate(
             _id,
-            { busId, busNumber, routeName, conductorName, mobileNo, stops },
+            { busId, busNumber, routeName, depo, route },
             { new: true }
-        ).populate('stops');
+        ).populate('route');
 
         if (!updatedBus) {
             return NextResponse.json({ error: 'Bus not found' }, { status: 404 });

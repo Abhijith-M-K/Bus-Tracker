@@ -34,7 +34,7 @@ export async function GET(
                 { busId: { $regex: new RegExp(`^${searchTerm}$`, 'i') } },
                 { mobileNo: searchTerm }
             ]
-        }).populate('stops');
+        }).populate('route');
 
         const queryBusId = bus ? bus.busId : searchTerm;
 
@@ -50,18 +50,63 @@ export async function GET(
             }, { status: 404 });
         }
 
+        // Ensure we have the full bus document for the journey
+        let currentBus = bus;
+        if (!currentBus) {
+            currentBus = await Bus.findOne({ busId: journey.busId }).populate('route');
+        }
+
         const address = await getAddress(journey.currentLocation.lat, journey.currentLocation.lng);
 
         // Handle Directional Route Reversal
-        let processedBus = bus ? JSON.parse(JSON.stringify(bus)) : null;
+        let processedBus = currentBus ? JSON.parse(JSON.stringify(currentBus)) : null;
         if (processedBus && journey.direction === 'return') {
-            // Reverse Stops
-            if (processedBus.stops && Array.isArray(processedBus.stops)) {
-                processedBus.stops.reverse();
+            // Reverse Route IDs/Stops
+            if (processedBus.route && Array.isArray(processedBus.route)) {
+                processedBus.route.reverse();
             }
             // Reverse Route Name (Source - Destination -> Destination - Source)
             if (processedBus.routeName && processedBus.routeName.includes(' - ')) {
                 processedBus.routeName = processedBus.routeName.split(' - ').reverse().join(' - ');
+            }
+        }
+
+        // Map 'route' to 'stops' for frontend compatibility
+        if (processedBus) {
+            processedBus.stops = processedBus.route;
+
+            // NEW: Fetch today's allocation for this bus
+            try {
+                const today = new Date();
+                today.setHours(0, 0, 0, 0);
+
+                // Use a wider range to account for potential UTC/Local timezone shifts (±12h)
+                const searchStart = new Date(today.getTime() - 12 * 60 * 60 * 1000);
+                const searchEnd = new Date(today.getTime() + 36 * 60 * 60 * 1000);
+
+                const { Allocation } = await import('@/models/Allocation');
+                const { Conductor } = await import('@/models/Conductor');
+
+                console.log(`Searching allocation for bus: ${currentBus._id}, range: ${searchStart.toISOString()} - ${searchEnd.toISOString()}`);
+
+                const allocation = await Allocation.findOne({
+                    busId: currentBus._id,
+                    date: {
+                        $gte: searchStart,
+                        $lt: searchEnd
+                    }
+                }).populate('conductorId');
+
+                if (allocation && allocation.conductorId && processedBus) {
+                    console.log(`Found allocation: ${allocation._id} with conductor: ${allocation.conductorId.name}`);
+                    processedBus.conductorName = allocation.conductorId.name;
+                    processedBus.conductorId = allocation.conductorId.conductorId;
+                    processedBus.mobileNo = allocation.conductorId.phone;
+                } else {
+                    console.log('No allocation found in range, conductorId missing, or processedBus is null');
+                }
+            } catch (allocError) {
+                console.error('Error fetching allocation for passenger view:', allocError);
             }
         }
 

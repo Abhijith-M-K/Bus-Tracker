@@ -1,22 +1,21 @@
 import mongoose, { Schema, Document, model, models } from 'mongoose';
 import './Depo';
+import './Route';
 
 export interface IBus extends Document {
     busId: string;
     busNumber: string;
     routeName: string;
-    conductorName: string;
-    mobileNo: string;
-    stops: mongoose.Types.ObjectId[];
+    depo: string;
+    route: mongoose.Types.ObjectId[];
 }
 
 const BusSchema = new Schema<IBus>({
     busId: { type: String, required: true, unique: true },
     busNumber: { type: String, required: true },
     routeName: { type: String, required: true },
-    conductorName: { type: String, required: true },
-    mobileNo: { type: String, required: true },
-    stops: [{ type: Schema.Types.ObjectId, ref: 'Depo' }],
+    depo: { type: String, required: true },
+    route: [{ type: Schema.Types.ObjectId, ref: 'Route', required: true }],
 }, { timestamps: true });
 
 export interface IJourney extends Document {
