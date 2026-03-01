@@ -14,6 +14,13 @@ async function connectDB() {
     throw new Error('MONGODB_URI environment variable is not defined. Please check your hosting provider settings.');
   }
 
+  // Safe Debug Logging (does not expose full URI)
+  if (process.env.NODE_ENV === 'production') {
+    const uriStart = MONGODB_URI.substring(0, 10);
+    const uriEnd = MONGODB_URI.substring(MONGODB_URI.length - 5);
+    console.log(`[DB Debug] Length: ${MONGODB_URI.length}, Starts with: "${uriStart}...", Ends with: "...${uriEnd}"`);
+  }
+
   if (cached.conn) {
     return cached.conn;
   }
