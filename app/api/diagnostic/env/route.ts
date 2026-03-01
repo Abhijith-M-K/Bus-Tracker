@@ -1,27 +1,26 @@
 import { NextResponse } from 'next/server';
 
 export async function GET() {
-    const mongodbUri = process.env.MONGODB_URI || 'MISSING';
-    const emailUser = process.env.EMAIL_USER || 'MISSING';
-    const emailPass = process.env.EMAIL_PASS || 'MISSING';
+    const rawUri = process.env.MONGODB_URI || 'MISSING';
+    const trimmedUri = rawUri.trim();
+    const hasQuotes = trimmedUri.startsWith('"') || trimmedUri.startsWith("'");
+    const hasCorrectScheme = trimmedUri.startsWith('mongodb://') || trimmedUri.startsWith('mongodb+srv://');
 
     return NextResponse.json({
-        env: {
+        diagnostics: {
             MONGODB_URI: {
-                present: mongodbUri !== 'MISSING',
-                length: mongodbUri.length,
-                prefix: mongodbUri.substring(0, 10) + '...',
-                suffix: '...' + mongodbUri.substring(mongodbUri.length - 5)
+                present: rawUri !== 'MISSING',
+                rawLength: rawUri.length,
+                hasLeadingTrailingSpaces: rawUri !== rawUri.trim(),
+                hasAccidentalQuotes: hasQuotes,
+                hasCorrectScheme: hasCorrectScheme,
+                prefix: rawUri.substring(0, 15) + '...',
             },
-            EMAIL_USER: {
-                present: emailUser !== 'MISSING',
-                value: emailUser.substring(0, 3) + '***'
-            },
-            EMAIL_PASS: {
-                present: emailPass !== 'MISSING',
-                length: emailPass.length
-            }
-        },
-        message: "If MONGODB_URI does not start with 'mongodb://' or 'mongodb+srv://', it will fail."
+            tips: [
+                "In Vercel settings, DO NOT use quotes around the MONGODB_URI.",
+                "Ensure there are no spaces at the beginning of the URI.",
+                "Make sure you clicked 'Save' and RE-DEPLOYED the application."
+            ]
+        }
     });
 }

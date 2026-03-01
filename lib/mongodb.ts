@@ -7,18 +7,24 @@ if (!cached) {
 }
 
 async function connectDB() {
-  const MONGODB_URI = process.env.MONGODB_URI;
+  let MONGODB_URI = process.env.MONGODB_URI?.trim();
+
+  if (MONGODB_URI && (MONGODB_URI.startsWith('"') || MONGODB_URI.startsWith("'"))) {
+    MONGODB_URI = MONGODB_URI.substring(1, MONGODB_URI.length - 1);
+  }
 
   if (!MONGODB_URI) {
-    console.error('CRITICAL: MONGODB_URI is missing in production environment');
+    console.error('CRITICAL: MONGODB_URI is missing or empty in production environment');
     throw new Error('MONGODB_URI environment variable is not defined. Please check your hosting provider settings.');
   }
 
-  // Safe Debug Logging (does not expose full URI)
+  // Safe Debug Logging
   if (process.env.NODE_ENV === 'production') {
-    const uriStart = MONGODB_URI.substring(0, 10);
-    const uriEnd = MONGODB_URI.substring(MONGODB_URI.length - 5);
-    console.log(`[DB Debug] Length: ${MONGODB_URI.length}, Starts with: "${uriStart}...", Ends with: "...${uriEnd}"`);
+    const hasScheme = MONGODB_URI.startsWith('mongodb://') || MONGODB_URI.startsWith('mongodb+srv://');
+    console.log(`[DB Debug] URI Length: ${MONGODB_URI.length}, Standard Scheme: ${hasScheme}`);
+    if (!hasScheme) {
+      console.error(`[DB Error] URI identifies as: "${MONGODB_URI.substring(0, 15)}..."`);
+    }
   }
 
   if (cached.conn) {
