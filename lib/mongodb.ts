@@ -7,24 +7,38 @@ if (!cached) {
 }
 
 async function connectDB() {
-  let MONGODB_URI = process.env.MONGODB_URI?.trim();
+  let MONGODB_URI = process.env.MONGODB_URI;
 
-  if (MONGODB_URI && (MONGODB_URI.startsWith('"') || MONGODB_URI.startsWith("'"))) {
-    MONGODB_URI = MONGODB_URI.substring(1, MONGODB_URI.length - 1);
+  if (MONGODB_URI) {
+    MONGODB_URI = MONGODB_URI.trim();
+
+    // Remove BOM and other non-printing characters
+    MONGODB_URI = MONGODB_URI.replace(/^[\uFEFF\u200B\u00A0]+/, '');
+
+    // Remove accidental "MONGODB_URI=" prefix if pasted into Vercel value field
+    if (MONGODB_URI.startsWith('MONGODB_URI=')) {
+      MONGODB_URI = MONGODB_URI.substring('MONGODB_URI='.length).trim();
+    }
+
+    // Remove accidental quotes
+    if (MONGODB_URI.startsWith('"') || MONGODB_URI.startsWith("'")) {
+      MONGODB_URI = MONGODB_URI.substring(1);
+      if (MONGODB_URI.endsWith('"') || MONGODB_URI.endsWith("'")) {
+        MONGODB_URI = MONGODB_URI.substring(0, MONGODB_URI.length - 1);
+      }
+    }
   }
 
   if (!MONGODB_URI) {
-    console.error('CRITICAL: MONGODB_URI is missing or empty in production environment');
-    throw new Error('MONGODB_URI environment variable is not defined. Please check your hosting provider settings.');
+    console.error('CRITICAL: MONGODB_URI is missing or empty');
+    throw new Error('MONGODB_URI environment variable is not defined.');
   }
 
-  // Safe Debug Logging
-  if (process.env.NODE_ENV === 'production') {
-    const hasScheme = MONGODB_URI.startsWith('mongodb://') || MONGODB_URI.startsWith('mongodb+srv://');
-    console.log(`[DB Debug] URI Length: ${MONGODB_URI.length}, Standard Scheme: ${hasScheme}`);
-    if (!hasScheme) {
-      console.error(`[DB Error] URI identifies as: "${MONGODB_URI.substring(0, 15)}..."`);
-    }
+  // Final check for valid scheme
+  const hasValidScheme = MONGODB_URI.startsWith('mongodb://') || MONGODB_URI.startsWith('mongodb+srv://');
+  if (!hasValidScheme) {
+    console.error(`[DB Error] Invalid URI Scheme. Starts with: "${MONGODB_URI.substring(0, 15)}..."`);
+    throw new Error('Invalid MONGODB_URI scheme. Must start with "mongodb://" or "mongodb+srv://".');
   }
 
   if (cached.conn) {
