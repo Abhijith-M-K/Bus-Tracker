@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback, use } from 'react';
+import { useEffect, useState, useCallback, use, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { ShieldCheck, Navigation, Power, AlertCircle, MapPin, Loader2, RefreshCcw, ArrowLeftRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -15,12 +15,14 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
     const [error, setError] = useState<string | null>(null);
     const [status, setStatus] = useState<'idle' | 'starting' | 'active' | 'error'>('idle');
     const [loading, setLoading] = useState(true);
-    const [requestLock, setRequestLock] = useState(false);
+    const requestLock = useRef(false);
     const [direction, setDirection] = useState<'forward' | 'return'>('forward');
     const [storedName, setStoredName] = useState<string>('');
+    const [storedPhone, setStoredPhone] = useState<string>('');
 
     useEffect(() => {
         setStoredName(localStorage.getItem('conductor_name') || '');
+        setStoredPhone(localStorage.getItem('conductor_phone') || '');
     }, []);
 
     const checkBus = useCallback(async () => {
@@ -45,15 +47,22 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
     }, [checkBus]);
 
     const updateLocationOnServer = async (lat: number, lng: number, currentStatus: string) => {
-        if (requestLock) return;
-        setRequestLock(true);
+        if (requestLock.current) return;
+        requestLock.current = true;
 
         try {
             const endpoint = currentStatus === 'starting' ? '/api/journey/start' : '/api/journey/update';
             const res = await fetch(endpoint, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ busId, lat, lng, direction }),
+                body: JSON.stringify({
+                    busId,
+                    lat,
+                    lng,
+                    direction,
+                    conductorName: bus?.conductorName || storedName,
+                    conductorPhone: bus?.mobileNo || storedPhone
+                }),
             });
 
             const data = await res.json();
@@ -68,7 +77,7 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
                 setStatus('idle');
             }
         } finally {
-            setRequestLock(false);
+            requestLock.current = false;
         }
     };
 
@@ -95,14 +104,26 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
                     (position) => {
                         const { latitude, longitude } = position.coords;
                         setLocation({ lat: latitude, lng: longitude });
+                        setError(null); // Clear any temporary errors
                         updateLocationOnServer(latitude, longitude, status === 'idle' ? 'starting' : status);
                     },
                     (err) => {
-                        setError(err.message);
-                        setStatus('error');
-                        setTracking(false);
+                        console.warn('Geolocation update failed:', err.code, err.message);
+                        setError(`Signal weak: ${err.message}`);
+
+                        // Only stop tracking if permission is denied
+                        if (err.code === 1) { // PERMISSION_DENIED
+                            setStatus('error');
+                            setTracking(false);
+                        }
+                        // Otherwise (Code 2: POSITION_UNAVAILABLE, Code 3: TIMEOUT), 
+                        // we keep tracking=true so it continues to try.
                     },
-                    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+                    {
+                        enableHighAccuracy: true,
+                        timeout: 15000, // Increased timeout
+                        maximumAge: 5000 // Allow 5-second old cache for stability
+                    }
                 );
             } else {
                 setError('Geolocation is not supported by this browser.');
@@ -118,7 +139,7 @@ export default function TrackPage({ params }: { params: Promise<{ busId: string 
         return () => {
             if (watchId) navigator.geolocation.clearWatch(watchId);
         };
-    }, [tracking, busId]);
+    }, [tracking, busId, status]);
 
     if (loading) {
         return (

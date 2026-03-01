@@ -29,6 +29,16 @@ export interface IJourney extends Document {
     lastUpdated: Date;
     startTime: Date;
     endTime?: Date;
+    conductorName?: string;
+    conductorPhone?: string;
+    notifications?: Array<{
+        passengerId: string;
+        phoneNumber: string;
+        dropoffLocation: string;
+        dropoffCoords: { lat: number; lng: number };
+        lastNotified?: Date;
+        reached: boolean;
+    }>;
 }
 
 const JourneySchema = new Schema<IJourney>({
@@ -42,6 +52,19 @@ const JourneySchema = new Schema<IJourney>({
     lastUpdated: { type: Date, default: Date.now },
     startTime: { type: Date, default: Date.now },
     endTime: { type: Date },
+    conductorName: { type: String },
+    conductorPhone: { type: String },
+    notifications: [{
+        passengerId: { type: String },
+        phoneNumber: { type: String },
+        dropoffLocation: { type: String },
+        dropoffCoords: {
+            lat: { type: Number },
+            lng: { type: Number }
+        },
+        lastNotified: { type: Date },
+        reached: { type: Boolean, default: false }
+    }]
 });
 
 // Journey index for quick lookup of active journeys by busId

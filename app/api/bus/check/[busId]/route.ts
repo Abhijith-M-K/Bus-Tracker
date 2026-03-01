@@ -16,6 +16,7 @@ export async function GET(
         const bus = await Bus.findOne({
             $or: [
                 { busId: { $regex: new RegExp(`^${searchTerm}$`, 'i') } },
+                { busNumber: { $regex: new RegExp(`^${searchTerm}$`, 'i') } },
                 { mobileNo: searchTerm }
             ]
         });

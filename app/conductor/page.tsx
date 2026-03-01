@@ -68,6 +68,7 @@ export default function ConductorAuth() {
                 if (authMode === 'login') {
                     localStorage.setItem('conductor_authenticated', 'true');
                     localStorage.setItem('conductor_name', data.conductor.name);
+                    localStorage.setItem('conductor_phone', data.conductor.phone);
                     setConductorName(data.conductor.name);
                     setIsLoggedIn(true);
                     setMessage('Login successful!');
