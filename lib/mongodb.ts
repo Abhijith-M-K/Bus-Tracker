@@ -1,7 +1,5 @@
 import mongoose from 'mongoose';
 
-const MONGODB_URI = process.env.MONGODB_URI;
-
 let cached = (global as any).mongoose;
 
 if (!cached) {
@@ -9,9 +7,11 @@ if (!cached) {
 }
 
 async function connectDB() {
+  const MONGODB_URI = process.env.MONGODB_URI;
+
   if (!MONGODB_URI) {
-    console.error('MONGODB_URI is missing');
-    throw new Error('Please define the MONGODB_URI environment variable');
+    console.error('CRITICAL: MONGODB_URI is missing in production environment');
+    throw new Error('MONGODB_URI environment variable is not defined. Please check your hosting provider settings.');
   }
 
   if (cached.conn) {
